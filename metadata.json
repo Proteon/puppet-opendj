@@ -1,0 +1,20 @@
+{
+  "author": "Sander Bilo",
+  "checksums": {
+    "LICENSE": "6c4db32a2fa8717faffa1d4f10136f47",
+    "manifests/instance.pp": "d5c0134a556a7c337f0ee64de38671c6",
+    "manifests/init.pp": "1253f52b069a948404f7946bf061b194",
+    "Modulefile": "bc0bcaf0ca50522fd4980c4f1e17d475",
+    "README.md": "59db64ecc7e44d24f93d9c4c7421691c"
+  },
+  "dependencies": [
+  ],
+  "description": "",
+  "license": "Apache 2.0",
+  "name": "puppet-opendj",
+  "project_page": "",
+  "source": "",
+  "summary": "",
+  "types": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,8 @@
+name    'puppet-opendj'
+version '0.1.0'
+source ''
+author 'Sander Bilo'
+license 'Apache 2.0'
+summary ''
+description ''
+project_page ''
