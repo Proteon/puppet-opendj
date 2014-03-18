@@ -1,13 +1,13 @@
 define opendj::instance (
   $version,
   $base_dn,
+  $admin_pw,
   $instance        = $name,
   $ldap_port  	   = '1389',
   $ldaps_port      = '1636',
   $admin_port 	   = '5444',
   $jmx_port   	   = '1689',
   $admin_cn   	   = 'Directory\ Manager',
-  $admin_pw   	   = sha1($name),
   $ssl_certificate = undef,
   $java_version    = 'openjdk_1_7_0',
 ) {
