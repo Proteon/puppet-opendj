@@ -3,15 +3,15 @@ define opendj::instance (
   $base_dn,
   $admin_pw,
   $instance        = $name,
-  $ldap_port  	   = '1389',
+  $ldap_port       = '1389',
   $ldaps_port      = '1636',
-  $admin_port 	   = '5444',
-  $jmx_port   	   = '1689',
-  $admin_cn   	   = 'Directory\ Manager',
+  $admin_port      = '5444',
+  $jmx_port        = '1689',
+  $admin_cn        = 'Directory\ Manager',
   $ssl_certificate = undef,
-  $java_version    = 'openjdk_1_7_0',
-) {
+  $java_version    = 'openjdk_1_7_0',) {
   include opendj
+  include maven
 
   $instance_home = "/opt/opendj/instances/${instance}"
 
@@ -26,6 +26,7 @@ define opendj::instance (
     password => '!',
     ensure   => present,
     comment  => 'OpenDJ user',
+    require  => File[$instance_home],
   }
 
   file { $instance_home:
@@ -34,7 +35,7 @@ define opendj::instance (
     group  => $instance,
   }
 
-  if(!defined(Maven["/usr/share/java/opendj-server-${version}.zip"])) {
+  if (!defined(Maven["/usr/share/java/opendj-server-${version}.zip"])) {
     maven { "/usr/share/java/opendj-server-${version}.zip":
       id    => "org.forgerock.opendj:opendj-server:${version}:zip",
       repos => 'http://maven.forgerock.org/repo/releases',
@@ -45,17 +46,17 @@ define opendj::instance (
     command => "/usr/bin/sudo -u ${instance} /usr/bin/unzip /usr/share/java/opendj-server-${version}.zip -d ${instance_home}",
     creates => "${instance_home}/opendj",
     notify  => Exec["${instance}:setup"],
-    require => [File[$instance_home],Maven["/usr/share/java/opendj-server-${version}.zip"]],
+    require => [File[$instance_home], Maven["/usr/share/java/opendj-server-${version}.zip"]],
   }
 
-  if($ssl_certificate) {
+  if ($ssl_certificate) {
     file { "${instance_home}/ssl":
       ensure  => directory,
       owner   => $instance,
       group   => $instance,
       require => Exec["${instance}:unzip"],
     }
-    
+
     file { "${instance_home}/ssl/keystore.pk12":
       source => $ssl_certificate,
       owner  => $instance,
@@ -80,7 +81,7 @@ define opendj::instance (
     require     => $require,
     before      => Exec["${instance}:startup"],
   }
-  
+
   exec { "${instance}:startup":
     command => "/usr/bin/sudo -u ${instance} ${instance_home}/opendj/bin/start-ds",
     unless  => "/bin/ps aux | /bin/grep 'org.opends.server.core.DirectoryServer' | /bin/grep 'org.opends.server.extensions.ConfigFileHandler' |/bin/grep '${instance}\/opendj'",
