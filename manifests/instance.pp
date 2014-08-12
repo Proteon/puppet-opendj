@@ -11,6 +11,7 @@ define opendj::instance (
   $ssl_certificate = undef,
   $java_version    = 'openjdk_1_7_0',) {
   include maven
+  include opendj
 
   $instance_home = "/opt/opendj/instances/${instance}"
 
@@ -31,7 +32,6 @@ define opendj::instance (
     ensure => directory,
     owner  => $instance,
     group  => $instance,
-    before => User[$instance],
   }
 
   if (!defined(Maven["/usr/share/java/opendj-server-${version}.zip"])) {
