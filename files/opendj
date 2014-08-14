@@ -1,0 +1,139 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          opendj
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Manage opendj server
+# Description:       Start, stop, restart opendj server for a specific application.
+### END INIT INFO
+
+PATH=/bin:/usr/bin:/usr/sbin
+
+# only root should run this one since we want to implement user-per-opendj
+if [ "$EUID" -ne 0 ]; then
+        echo "Only root should run this script. sorry"
+        exit 1
+fi
+
+args='start|stop|restart|status --instance=<instance>'
+case $1 in
+        --help)
+        echo "Usage: $0 {${args}}"
+        exit 1
+;;
+esac
+
+# functions
+info() { 
+        echo -ne '\E[0;32m'"\033[1mINFO\033[0m "
+        echo ${1}
+}
+die() {
+        echo -ne '\E[32;31m'"\033[1mERR\033[0m "
+        echo ${1}
+        exit 1
+}
+warn() {
+        echo -ne '\E[32;33m'"\033[1mWARN\033[0m "
+        echo ${1}
+}
+
+start() {
+	PID=`ps ax | grep "org.opends.server.core.DirectoryServer" | grep "/opt/opendj/instances/${opendj}/opendj/config/config.ldif" | awk '{printf $1}'`
+	if [ "$PID" != "" ]; then   
+		info "Already running OpenDJ [$opendj] @ PID: $PID ..."
+    	else
+        	info "Starting OpenDJ [$opendj]"  
+    		su - $opendj -c "/opt/opendj/instances/${opendj}/opendj/bin/start-ds > /dev/null 2>&1"
+    		status
+    	fi
+}
+stop() {
+	PID=`ps ax | grep "org.opends.server.core.DirectoryServer" | grep "/opt/opendj/instances/${opendj}/opendj/config/config.ldif" | awk '{printf $1}'`
+	if [ "$PID" != "" ]; then
+		info "Stopping Opendj [$opendj] @ PID: $PID "
+        kill $PID
+        sleep 2
+	PID=`ps ax | grep "org.opends.server.core.DirectoryServer" | grep "/opt/opendj/instances/${opendj}/opendj/config/config.ldif" | awk '{printf $1}'`
+	if [ "$PID" != "" ]; then
+                info "OpenDJ [$opendj] doesn't seem to stop fast enough, killing it"
+                kill -9 $PID
+        fi
+        info "OpenDJ [$opendj] stopped"
+	else
+        warn "OpenDJ [$opendj] not running"
+	fi
+}
+status() {
+	PID=`ps ax | grep "org.opends.server.core.DirectoryServer" | grep "/opt/opendj/instances/${opendj}/opendj/config/config.ldif" | awk '{printf $1}'`
+	if [ "$PID" != "" ]; then
+    		info "OpenDJ [$opendj] running @ PID: $PID"
+	else
+    		info "OpenDJ [$opendj] not running!"
+    	fi
+}
+
+if [ -z "/etc/opendj.d" ]; then
+        die "includedir unknown. $errmsg"
+        else
+        # guess instance names
+        opendjs=$( ls -1Ap /etc/opendj.d/ | grep -v /\$ )
+        if [ "${i#opendjs[@]}" == "0" ]; then
+                die "no config files found in $includedir. sorry"
+        fi
+fi
+
+case $1 in
+        start)
+        if [[  "${2}" =~ "--instance=" ]]; then
+                opendj="${2}"
+                opendj="${opendj##--instance=}"
+                start
+        else
+        	for opendj in ${opendjs}; do
+            	start
+            done
+        fi
+;;
+    stop)
+        if [[  "${2}" =~ "--instance=" ]]; then
+                opendj="${2}"
+                opendj="${opendj##--instance=}"
+                stop     
+        else
+                for opendj in ${opendjs}; do
+                        stop
+                done
+        fi
+;;
+        restart)
+              if [[  "${2}" =~ "--instance=" ]]; then
+                opendj="${2}"
+                opendj="${opendj##--instance=}"
+                stop
+                start
+        else              
+                for opendj in ${opendjs}; do
+                        stop
+                        start
+                done
+        fi
+;;
+        status)
+        if [[  "${2}" =~ "--instance=" ]]; then
+                opendj="${2}"
+                opendj="${opendj##--instance=}"
+                status
+        else                
+                for opendj in ${opendjs}; do
+                        status
+                done
+        fi
+;;
+        *)
+        $0 --help
+;;
+esac
+exit 0
