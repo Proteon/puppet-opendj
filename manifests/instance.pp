@@ -37,7 +37,7 @@ define opendj::instance (
   if (!defined(Maven["/usr/share/java/opendj-server-${version}.zip"])) {
     maven { "/usr/share/java/opendj-server-${version}.zip":
       id    => "org.forgerock.opendj:opendj-server:${version}:zip",
-      repos => 'http://maven.forgerock.org/repo/releases',
+      repos => ['releases::default::http://maven.forgerock.org/repo/releases','snapshots::default::http://maven.forgerock.org/repo/snapshots']
     }
   }
 
@@ -84,5 +84,12 @@ define opendj::instance (
   exec { "${instance}:startup":
     command => "/usr/bin/sudo -u ${instance} ${instance_home}/opendj/bin/start-ds",
     unless  => "/bin/ps aux | /bin/grep 'org.opends.server.core.DirectoryServer' | /bin/grep 'org.opends.server.extensions.ConfigFileHandler' |/bin/grep '${instance}\/opendj'",
+  }
+
+  file { "/etc/opendj.d/${name}":
+    ensure  => $ensure,
+    content => '',
+    require => User[$name],
+    mode    => '0640',
   }
 }
